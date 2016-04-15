@@ -1,0 +1,226 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>IC Advanced Basics - LOGIC</title>
+
+<style>
+	body {margin:0px; padding:0px; background-color:#000; overflow:hidden;}
+	#myCanvas {position:absolute; left:0px; top:0px; background-color:#000;}
+</style>
+
+<script src="js/createjs-2015.11.26.min.js"></script>
+<script src="js/mobile.js"></script>
+
+
+<script>
+
+window.addEventListener("load", function() {
+
+	var stageW;
+	var stageH;
+	var ready = false;
+	var resize;
+	var orientation;
+
+	makeCanvas();
+
+	var stage = new createjs.Stage("myCanvas");
+	stage.enableMouseOver(10);  // leave out if mobile
+	createjs.Touch.enable(stage, true);
+	sizeStage();
+
+	// end template header
+	//------------------------------------------
+
+	var cols = 5;
+	var rows = 5;
+	var tileColor = "#333";
+	var letterColor = "#ccc";
+	var points = 0;
+	var bonus = 100;
+
+	var total = cols * rows;
+
+	/////////////  LETTERS  /////////////////
+
+	var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	var words = ["JAVASCRIPT", "CREATEJS", "ZIM"];
+	var letters = [];
+	var word;
+	for (var i=0; i<words.length; i++) {
+		word = words[i];
+		var split = word.split("");
+		letters = letters.concat(split);
+	}
+	console.log(letters);
+
+	var add = total-letters.length;
+	for (i=0; i<add; i++) {
+		letters.push(alphabet.charAt(Math.floor(Math.random()*alphabet.length)));
+	}
+	// console.log(letters.length);
+	shuffle(letters);
+	function shuffle(array) {
+        if (array == null) return;
+        var i = array.length, j, temp;
+        if (i == 0) return array;
+        while(--i) {
+            j = Math.floor(Math.random()*(i+1));
+            temp=array[i];
+            array[i]=array[j];
+            array[j]=temp;
+        }
+        return array;
+    }
+
+	/////////////  TILES  /////////////////
+
+	var tiles = new createjs.Container();
+	stage.addChild(tiles);
+
+	var spacing = stageW*.007;
+	var size = (stageW*.8-spacing*(cols-1))/cols;
+	var tile, backing, letter;
+	for (i=0; i<total; i++) {
+		tile = new createjs.Container();
+		tile.mouseChildren = false;
+		backing = new createjs.Shape();
+		backing.graphics.f(tileColor).rr(1,0,size,size,size*.4);
+		tile.addChild(backing);
+		tiles.addChild(tile);
+
+		tile.x = (size+spacing) * (i%cols);
+		tile.y = (size+spacing) * Math.floor(i/cols);
+		tile.letter = letters[i];
+		var letter = new createjs.Text(tile.letter, size*.4 + "px arial", letterColor);
+		letter.textAlign = "center";
+		letter.textBaseline = "middle";
+		tile.addChild(letter);
+		letter.x = letter.y = size/2;
+
+	}
+	tiles.x = stageW*.1;
+	tiles.y = stageW*.1;
+
+	tiles.cursor = "pointer";
+	tiles.on("mousedown", function(e) {
+		if (answer.text == "SWIPE TO SCORE") answer.text = "";
+		answer.text += e.target.letter;
+		stage.update();
+	});
+
+	/////////////  TRAY  /////////////////
+
+	var tray = new createjs.Container();
+	tray.height = stageH*.15;
+	stage.addChild(tray);
+
+	var trayBacking = new createjs.Shape();
+	trayBacking.graphics.f("#444").dr(0,0,stageW,tray.height);
+	tray.addChild(trayBacking);
+
+	var answer = new createjs.Text("SWIPE TO SCORE", size*.6 + "px arial", letterColor);
+	answer.textAlign = "center";
+	answer.textBaseline = "middle";
+	tray.addChild(answer);
+	answer.x = stageW/2;
+	answer.y = tray.height/2;
+
+	tray.y = stageH*.75;
+
+	tray.cursor = "pointer";
+	// im.swipe(tray);
+	tray.on("swipe", function(e) {
+		if (e.swipeX != -1) return;
+		createjs.Tween.get(answer)
+			.to({x:stageW/2 + e.swipeX*stageW*2}, 500)
+			.call(function(){
+
+				if (words.indexOf(answer.text) >= 0) {
+					console.log("Score!!!");
+					points += bonus;
+					console.log(points);
+				}
+
+				answer.text = "";
+				answer.x = stageW/2;
+				stage.update();
+
+				createjs.Ticker.off("tick", tick);
+
+			});
+		var tick = createjs.Ticker.on("tick", stage);
+	});
+
+	resize = function() {
+		// here is where we put code to resize
+
+		stage.update();
+	}
+
+	stage.update();
+	ready = true;
+
+	// ----------------------------------------------
+	// start template footer
+	function makeCanvas() {
+		// make a canvas tag and apply attributes for id, width and height
+		var canvas = document.createElement("canvas");
+		canvas.setAttribute("id", "myCanvas");
+
+		// get maximum size for canvas
+		// note: iOS6 does not work from loading icon unless keep canvas within device size
+		// thank you apple for this and many other days of hell
+		largest = Math.max(window.innerWidth, screen.width, window.innerHeight, screen.height);
+		if (!/ip(hone|od|ad)/i.test(navigator.userAgent)) largest *= 3; // handle up to three monitors
+		canvas.setAttribute("width", largest);
+		canvas.setAttribute("height", largest);
+
+		// add our canvas tag
+		document.body.appendChild(canvas);
+
+		// stop the canvas from moving when certain keys are pressed (pgdwn, pgup, arrows, home, end)
+		// and stop scrollwheel from moving page
+		var a = function(e) {
+			if (!e) e = event;
+			if (e.keyCode && (e.keyCode >= 32 && e.keyCode <= 40)) e.preventDefault();
+		}
+		var b = function(e) {
+			if (!e) e = event;
+			e.preventDefault();
+		}
+		var c = b;
+		window.addEventListener("keydown", a);
+		window.addEventListener("mousewheel", b);
+		window.addEventListener("DOMMouseScroll", c);
+		window.addEventListener('resize', function() {
+			sizeStage();
+			if (/android|nexus/i.test(navigator.userAgent)) {
+				setTimeout(function() {
+					sizeStage();
+				}, 500); // to catch delayed screen sizes
+			}
+		});
+	}
+
+	function sizeStage() {
+		// earlier than IE9 does not have innerWidth
+		// inner is better on mobile when zoomed so can't always use client
+		// ternary operator
+		stageW = isNaN(window.innerWidth) ? window.clientWidth : window.innerWidth;
+		stageH = isNaN(window.innerHeight) ? window.clientHeight : window.innerHeight;
+
+		// if wider than high then we have horizontal (or landscape)
+		orientation = (stageW>stageH) ? "horizontal" : "vertical";
+
+		if (stage) stage.setBounds(0,0,stageW,stageH);
+		if (ready) resize();
+	}
+});
+
+</script>
+</head>
+<body>
+</body>
+</html>
