@@ -265,7 +265,7 @@ window.addEventListener("load", function() {
 	var counter = 20;
 
 
-	var text = new createjs.Text(counter, "30px arial", "white");
+	var text = new createjs.Text(counter, "30px arial", "black");
 	stage.addChild(text);
 	text.x =450;
 	text.y = 560;
@@ -294,12 +294,12 @@ window.addEventListener("load", function() {
 			console.log("lose");
 
 			var text2 =  new createjs.Text("YOU GET LOSE", "30px arial", "white");
-			text2.x = stageW/3;
+			text2.x = stageW/2;
 			text2.y = stageH/2.5;
 			stage.addChild(text2);
-			stage.removeChild(counter);
-			stage.removeChild(tiles);
-			stage.removeChild(text)
+			// stage.removeChild(counter);
+			// stage.removeChild(tiles);
+			// stage.removeChild(text)
 			stage.update;
 
 		}
